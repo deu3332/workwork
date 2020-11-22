@@ -10,32 +10,36 @@ from nav_msgs.msg import Odometry          # odometry -> 주행 속도정보 측
 
 class Stack(list):  # 좌표저장을 위한 스택
     push = list.append                # push 변수에 매개변수로 받아온 list의 값 추가 
-    count = 0                     # count 0으로 초기화 
+    count = 0                         # count 0으로 초기화 
 
-    def check_data(self):               # 이거 왜있는지 모르겠음 아는사람 
+    def check_end(self):
+        return self[-1]
+    
+    def check_data(self):               # 데이터 체크 
         if not self:
             return True
         else:
             return False
 
-    def check_end(self):
-        return self[-1]
-
 
 class first_move:  # 메이즈 1차 탈출 클래스
-    map_stack_X = Stack()   # 좌표 x,y값 스택에 저장
-    map_stack_Y = Stack()
+ 
     map_location_X = 0  # 주어진 맵  x,y 좌표 
     map_location_Y = 0
+    map_stack_X = Stack()   # 좌표 x,y값 스택에 저장
+    map_stack_Y = Stack()
+
 
     def __init__(self):               # __init__(self) 메소드 : 초기화 메소드라고 생각하면 편함. 인자는 self로 고정 
-        self.move_front = True       # 직진 상태 여부 
-        self.rotate = False             # 회전 상태 여부 
-        self.encounter = True                 # 탈출 상태 여부 
-        self.turn = Twist()
+       
+        self.move_front = True                # 직진 상태 여부 
+        self.encounter = True                 # 탈출 상태 여부
+        self.rotate = False                   # 회전 상태 여부 
+        
         self.twist = Twist()
+        self.turn = Twist()
+        self.rate = rospy.Rate(10)          # 토픽 발행 속도 초당 10  
         self.count = 0
-        self.rate = rospy.Rate(10)          # 토픽 발행 속도 초당 10
 
         self.distance_front = 1
         self.distance_left = 1
@@ -49,13 +53,16 @@ class first_move:  # 메이즈 1차 탈출 클래스
         self.cmd_vel_pub = rospy.Publisher('cmd_vel_mux/input/teleop', Twist, queue_size=1)         # cmd_vel  토픽 발행 Twist 메세지 타입  
         self.scan_sub = rospy.Subscriber('scan', LaserScan, self.scan_callback)          # scan 메세지토픽 구독자 발행 
 
-    # 스캔 콜백 함수 -> 노드가 토픽 구동하면 발생 
-    def scan_callback(self, msg):     # msg가 도착할때 마다 메세지를 매개변수로 하여 callback 함수는 호출됨. 
-        self.distance_front = msg.ranges[len(msg.ranges) / 2]                     # 카메라 기준으로 왼쪽부터 오른쪽 까지 이므로 2로 나눠서 카메라로 부터 정면까지의 거리  
-        self.distance_left = msg.ranges[int(len(msg.ranges) / 1.3)]  # 1350       # 왼쪽 각도 
-        self.distance_right = msg.ranges[len(msg.ranges) / 4]  # 450              # 오른쪽 각도 
 
-        
+    # 계산한 좌표 값을 스택에 저장
+    def save_location(self):       # 1차 탈출시 같은 경로로 돌아가서 목적지에 도착하게끔 하기 위한 경로 저장 메소드 
+        if self.rotate is True:   # 회전을 할 때 마다 저장함 
+            self.map_stack_X.push(self.map_location_X)          # x / y 좌표값 스택에 저장 
+            self.map_stack_Y.push(self.map_location_Y)
+            self.count = self.count + 1  # 카운트로 몇 번 쌓이는지 확인
+            Stack.count = Stack.count + 1
+            
+            
     # 오돔 좌표와 지도의 좌표를 계산, 오돔 콜백 함수
     def odom_callback(self, msg):          # 로봇 이동시 마다 지도의 좌표 및 odom임시 저장소를 이용해서 좌표를 계산하는 메소드. 
         self.poseX = msg.pose.pose.position.x       # 이동할때마다의 x 좌표 
@@ -64,14 +71,14 @@ class first_move:  # 메이즈 1차 탈출 클래스
         self.map_location_Y = self.poseY + 5.30          
 
         
-    # 계산한 좌표 값을 스택에 저장
-    def save_location(self):       # 1차 탈출시 같은 경로로 돌아가서 목적지에 도착하게끔 하기 위한 경로 저장 메소드 
-        if self.rotate is True:   # 회전을 할 때 마다 저장함 
-            self.map_stack_X.push(self.map_location_X)          # x / y 좌표값 스택에 저장 
-            self.map_stack_Y.push(self.map_location_Y)
-            self.count = self.count + 1  # 카운트로 몇 번 쌓이는지 확인
-            Stack.count = Stack.count + 1
-
+    # 스캔 콜백 함수 -> 노드가 토픽 구동하면 발생 
+    def scan_callback(self, msg):     # msg가 도착할때 마다 메세지를 매개변수로 하여 callback 함수는 호출됨. 
+        self.distance_front = msg.ranges[len(msg.ranges) / 2]                     # 카메라 기준으로 왼쪽부터 오른쪽 까지 이므로 2로 나눠서 카메라로 부터 정면까지의 거리  
+        self.distance_left = msg.ranges[int(len(msg.ranges) / 1.3)]  # 1350       # 왼쪽 각도 
+        self.distance_right = msg.ranges[len(msg.ranges) / 4]  # 450              # 오른쪽 각도 
+    
+    
+    
     # 미로 탈출 함수
     def escape_move(self):
         if self.encounter is True:  # 탈출 시작 알림
