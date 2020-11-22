@@ -59,8 +59,8 @@ class first_move:  # 메이즈 1차 탈출 클래스
     # 스캔 콜백 함수 -> 노드가 토픽 구동하면 발생 
     def scan_callback(self, msg):                                                 # msg가 도착할때 마다 메세지를 매개변수로 하여 callback 함수는 호출됨. 
         self.distance_front = msg.ranges[len(msg.ranges) / 2]                     # 카메라 기준으로 왼쪽부터 오른쪽 까지 이므로 2로 나눠서 카메라로 부터 정면까지의 거리  
-        self.distance_left = msg.ranges[int(len(msg.ranges) / 1.3)]               # 왼쪽 각도 
-        self.distance_right = msg.ranges[len(msg.ranges) / 4]                     # 오른쪽 각도 
+        self.distance_left = msg.ranges[int(len(msg.ranges) / 1.4)]               # 왼쪽 각도 
+        self.distance_right = msg.ranges[len(msg.ranges) / 3]                     # 오른쪽 각도 
 
         
         
