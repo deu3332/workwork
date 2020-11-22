@@ -31,7 +31,7 @@ class first_move:  # 메이즈 1차 탈출 클래스
     map_stack_X = Stack()   # 좌표 x,y값 스택에 저장
     map_stack_Y = Stack()
 
-    def __init__(self):                 # __init__(self) 메소드 : 초기화 메소드라고 생각하면 편함. 인자는 self로 고정 
+    def __init__(self):                 # __init__(self) 메소드 : 초기화 메소드. 인자는 self로 고정 
 
         self.turn = Twist()             # Twist 메세지 변수 
         self.twist = Twist()            # Twist 메세지 변수 
