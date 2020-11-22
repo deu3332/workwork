@@ -121,8 +121,8 @@ class first_move:  # 메이즈 1차 탈출 클래스
 # 1차 탈출, 2차 탈출 시작 조건을 위한 클래스
 class solve_start:
     def __init__(self):             # 초기화 메소드 
-        self.mr = first_move()      # 1차 탈출 클래스 객체 선언
-        self.tb = second_move()     # 2차 탈출 클래스 객체 선언
+        self.km = first_move()      # 1차 탈출 클래스 객체 선언
+        self.uj = second_move()     # 2차 탈출 클래스 객체 선언
         self.arrive_flag = False    # 도착 상태 플래그 
 
     # 출발, 도착 좌표 지점 인식 함수
@@ -132,24 +132,24 @@ class solve_start:
     def find_destination(self):                           # 목적지를 발견 여부 확인하는 메소드  
         while not rospy.is_shutdown():                    # 종료 전까지 무한루프 
             
-            if (-8.55 < self.mr.map_location_X < -7.55) and (
-                    5.05 < self.mr.map_location_Y < 5.55) and self.arrive_flag is True:  
+            if (-8.55 < self.km.map_location_X < -7.55) and (
+                    5.05 < self.km.map_location_Y < 5.55) and self.arrive_flag is True:  
                 # 도착 상태 플래그가 true이고 목적지 좌표 값에 들어가면 멈춤 
                 break
 
-            if ((7.75 < self.mr.map_location_X < 8.15) and (
-                    -5.35 < self.mr.map_location_Y < -4.95)) or self.arrive_flag is True:  
+            if ((7.75 < self.km.map_location_X < 8.15) and (
+                    -5.35 < self.km.map_location_Y < -4.95)) or self.arrive_flag is True:  
                 # 도착 상태 플래그가 true이고 도착지 좌표값에 둘어가면  
                 self.arrive_flag = True             # 도착 상태 플래그 True           
-                self.tb.re_escape()                 # 2차 탈출 메소드 불러옴 
+                self.uj.re_escape()                 # 2차 탈출 메소드 불러옴 
             else:
-                self.mr.escape_move()               # 아닐 경우 1차 탈출메소드 불러옴 
-                self.mr.save_location()             # 좌표 값 저장
+                self.km.escape_move()               # 아닐 경우 1차 탈출메소드 불러옴 
+                self.km.save_location()             # 좌표 값 저장
 
 # 2차 탈출 클래스 
 class second_move:
     def __init__(self):          # 2차 탈출에 사용할 각종 변수들 초기화 
-        self.mr = first_move()
+        self.km = first_move()
        
         self.second_move_front = True       # 직선 주행 플래그 
         self.re_rotate = False              # 회전 상태 플래그 
@@ -159,9 +159,9 @@ class second_move:
       
         self.j = 0                # for문 돌릴 변수 j 0으로 초기화 
 
-        self.odom_sub = rospy.Subscriber('odom', Odometry, self.mr.odom_callback)           # odom 메세지 토픽 구독자 발행 
+        self.odom_sub = rospy.Subscriber('odom', Odometry, self.km.odom_callback)           # odom 메세지 토픽 구독자 발행 
         self.cmd_vel_pub = rospy.Publisher('cmd_vel_mux/input/teleop', Twist, queue_size=1) # cmd_vel  토픽 발행 Twist 메세지 타입
-        self.scan_sub = rospy.Subscriber('scan', LaserScan, self.mr.scan_callback)          # scan 메세지토픽 구독자 발행 
+        self.scan_sub = rospy.Subscriber('scan', LaserScan, self.km.scan_callback)          # scan 메세지토픽 구독자 발행 
 
     # 2차 탈출 메소드 
     def re_escape(self):
@@ -179,14 +179,14 @@ class second_move:
                 self.second_move_front = True
                 
                 # 현재 좌표와 스택에 쌍인 좌표 중 0.25 오차만큼의 범위에 들어오면
-                if (self.mr.map_stack_X[i] - 0.25 <= self.mr.map_location_X <= self.mr.map_stack_X[i] + 0.25) and (
-                        self.mr.map_stack_Y[i] - 0.25 <= self.mr.map_location_Y < self.mr.map_stack_Y[i] + 0.25):
+                if (self.km.map_stack_X[i] - 0.25 <= self.km.map_location_X <= self.km.map_stack_X[i] + 0.25) and (
+                        self.km.map_stack_Y[i] - 0.25 <= self.km.map_location_Y < self.km.map_stack_Y[i] + 0.25):
                     self.second_move_front = False                     # 범위 내에 들어왔으니 회전해야함, 직선 주행을 멈추고
                     self.re_rotate = True                              # 회전 하기 위해 플래그 True 설정 
                     if self.re_rotate is True:                         # 회전할 경우
                         if self.second_move_front is False:            # 직선 주행을 멈춘 상태 
                             
-                            if self.mr.distance_left > self.mr.distance_right:       # 왼쪽 벽과의 거리가 오른쪽 벽과의 거리보다 멀 경우
+                            if self.km.distance_left > self.km.distance_right:       # 왼쪽 벽과의 거리가 오른쪽 벽과의 거리보다 멀 경우
                                 for self.j in range(10):
                                     explore = Twist()                                # Twist 메세지 explore 
                                     explore.angular.z = math.radians(90)             # 왼쪽으로 90도 회전하라
@@ -198,7 +198,7 @@ class second_move:
                                     self.cmd_vel_pub.publish(twist)
                                     self.rate.sleep()
                                    
-                            elif self.mr.distance_left < self.mr.distance_right:     # 왼쪽 벽과의 거리가 오른쪽 벽과의 거리보다 가까울 경우
+                            elif self.km.distance_left < self.km.distance_right:     # 왼쪽 벽과의 거리가 오른쪽 벽과의 거리보다 가까울 경우
                                 for self.j in range(10):
                                     explore = Twist()                                # Twist 메세지 explore 
                                     explore.angular.z = -math.radians(90)            # 오른쪽으로 90도 회전하라
