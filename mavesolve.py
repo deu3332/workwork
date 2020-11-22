@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*-coding: utf-8 -*-
 
 import rospy   
 import math
@@ -8,7 +9,7 @@ from sensor_msgs.msg import LaserScan      # LaserScan -> ranges 라는 필드�
 
 
 
-class Stack(list):  # 좌표저장을 위한 스택
+class route_save(list):  # 좌표저장을 위한 스택
     push = list.append                # push 변수에 매개변수로 받아온 list의 값 추가 
     count = 0                         # count 0으로 초기화 
 
@@ -28,8 +29,8 @@ class first_move:  # 메이즈 1차 탈출 클래스
   
     map_location_X = 0      # 주어진 맵  x,y 좌표 
     map_location_Y = 0
-    map_stack_X = Stack()   # 좌표 x,y값 스택에 저장
-    map_stack_Y = Stack()
+    map_stack_X = route_save()   # 좌표 x,y값 스택에 저장
+    map_stack_Y = route_save()
 
     def __init__(self):                 # __init__(self) 메소드 : 초기화 메소드. 인자는 self로 고정 
 
@@ -78,7 +79,7 @@ class first_move:  # 메이즈 1차 탈출 클래스
             self.map_stack_X.push(self.map_location_X)          # x / y 좌표값 스택에 저장 
             self.map_stack_Y.push(self.map_location_Y)
             self.count = self.count + 1                         # 카운트로 몇 번 쌓이는지 확인
-            Stack.count = Stack.count + 1
+            route_save.count = route_save.count + 1
 
             
             
@@ -174,7 +175,7 @@ class second_move:
 
         else:                          # 미로 방향으로 머리를 튼 후 
             twist = Twist()
-            for i in range(0, Stack.count, 1):  # 스택에 쌓았던 카운트 개수 만큼 반복
+            for i in range(0, route_save.count, 1):  # 스택에 쌓았던 카운트 개수 만큼 반복
                 self.second_move_front = True
                 
                 # 현재 좌표와 스택에 쌍인 좌표 중 0.25 오차만큼의 범위에 들어오면
